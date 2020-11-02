@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<!--
+  Name: David Schultz
+  Date: 10.21.2020
+  Section: CSE 154 AF / Wilson Tang
+
+  This is the overview page to display my photography work. It acts as
+  a navigation panel for all of my photos.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="format.css">
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="scroll.css">
+    <link rel="stylesheet" href="https://use.typekit.net/dzh7mpf.css">
+    <title>david | photo</title>
+    <script src="index.js"></script>
+  </head>
+  <body class="photo-bg">
+    <header class="flex-header dark-header">
+      <div class="logo">
+        <h1 class="logo-text">david</h1>
+        <h1 class="logo-text">schultz</h1>
+      </div>
+      <nav class="main-nav">
+        <a href="index.html">home</a><span> | </span>
+        <a href="about.html">about</a><span> | </span>
+        <a href="photography.html">photo</a><span> | </span>
+        <a href="design.html">design</a><span> | </span>
+        <a href="playlists.html">playlists</a>
+      </nav>
+    </header>
+    <main class="flex-container">
+      <article id="showcase">
+        <img src="photos/100.jpg" alt="portolio display photo" class="invisible highlighted">
+      </article>
+      <section class="sidebar">
+        <section id="liked" class="flex-container">
+        </section>
+        <div class="photo-buttons">
+          <button id="like-button">+</button>
+          <button id="prev-button">&lt;</button>
+          <button id="next-button">&gt;</button>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

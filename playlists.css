@@ -1,0 +1,33 @@
+
+
+section {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+}
+
+.display-card {
+  width: 75%;
+  margin-bottom: 30px;
+}
+
+.display-card div {
+  flex-direction: column;
+}
+
+.display-card h4 {
+  font-family: "adobe-garamond-pro", serif;
+  font-size: 25px;
+  margin: 0px;
+}
+
+.display-card p {
+  font-size: 18px;
+  margin: 8px;
+  padding: 0px 15px 10px 15px;
+}
+
+.display-img {
+  width: 200px;
+  height: 200px;
+}

@@ -1,0 +1,80 @@
+/*
+  Name: David Schultz
+  Date: 10.21.2020
+  Section: CSE 154 AF / Wilson Tang
+
+  This stylesheet handles both the style and formatting of page-specific elements.
+*/
+
+.photo-bg, .dark-bg, a, h1 {
+  color: #fafafa;
+}
+
+.photo-bg {
+  background-size: cover;
+  background-repeat: no-repeat;
+  height: 100vh;
+}
+
+.dark-bg {
+  background-color: #202222;
+}
+
+h1:hover {
+  cursor: pointer;
+}
+
+.flex-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0px 30px 0px 30px;
+}
+
+.logo-text:first-child {
+  padding: 5px 0px 0px 0px;
+  margin: 0px 0px 0px 0px;
+  color: #ffffff;
+  z-index: 1;
+  position: absolute;
+}
+
+.logo-text:last-child {
+  padding: 0px;
+  color: #aaaaaa;
+  margin: 23px 0px 0px 10px;
+}
+
+#showcase {
+  margin: auto;
+}
+
+#showcase img {
+  max-height: 600px;
+  max-width: 95%;
+  margin: auto;
+}
+
+main > img {
+  display: block;
+  margin: 20px auto 20px auto;
+  width: 80%;
+}
+
+.visible {
+  display: block;
+}
+
+.invisible {
+  display: none;
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: ;
+  grid-template-rows: ;
+  grid-template-areas: ;
+  column-gap: 75px;
+  row-gap: 75px;
+}
