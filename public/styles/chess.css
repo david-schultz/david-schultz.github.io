@@ -1,0 +1,42 @@
+/*
+ * Name: David Schultz
+ * Date: 11.20.2020
+ * Section: CSE 154 AF / Wilson Tang
+ *
+ * This stylesheet styles the chessboard for the chess page.
+ */
+
+.tile, .piece {
+  width: 40px;
+  height: 40px;
+}
+
+.dark-tile {
+  background-color: rgb(152, 112, 85);
+}
+
+.light-tile {
+  background-color: rgb(255, 251, 240);
+}
+
+.dark-tile.selected {
+  background-color: rgb(114, 173, 109);
+}
+
+.light-tile.selected {
+  background-color: rgb(160, 225, 155);
+}
+
+table {
+  border: 0px;
+}
+
+th > p {
+  padding-right: 8px;
+}
+
+td, img, p {
+  padding: 0px;
+  border-width: 0px;
+  margin: 0px;
+}

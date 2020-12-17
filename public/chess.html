@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<!--
+  Name: David Schultz
+  Date: 10.21.2020
+  Section: CSE 154 AF / Wilson Tang
+
+  This is the home page for my personal website. It is currently empty,
+  except for the header/nav bar.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="styles/styles.css">
+    <link rel="stylesheet" href="styles/format.css">
+    <link rel="stylesheet" href="styles/index.css">
+    <link rel="stylesheet" href="styles/chess.css">
+    <link rel="stylesheet" href="https://use.typekit.net/dzh7mpf.css">
+    <title>david</title>
+    <script src="chess.js"></script>
+  </head>
+  <body>
+    <header class="flex-header dark-header">
+      <div class="logo">
+        <h1 class="logo-text">david</h1>
+        <h1 class="logo-text">schultz</h1>
+      </div>
+      <nav class="main-nav">
+        <a href="index.html">home</a><span> | </span>
+        <a href="about.html">about</a><span> | </span>
+        <a href="design.html">design</a><span> | </span>
+        <a href="playlists.html">playlists</a>
+      </nav>
+    </header>
+    <section id="game-view" class="max-width-70">
+
+    </section>
+    <section id="match-info" class="max-width-70">
+      <h3>Match Info</h3>
+      <p id="current-selection">
+
+      </p>
+      <p id="piece-list">
+
+      </p>
+    </section>
+    <section id="dev-note" class="max-width-70">
+      <h3>~Developer's Note</h3>
+      <p>
+        This is an unfinished, WIP prototype for an online chess player.
+        At the present moment, only the pawns have movement functionality.
+        Further, the rules on pawn-movement are not fully formed--e.g., a
+        pawn is able to move diagonally even if it is not taking a piece.
+      </p>
+      <br>
+      <p>
+        Please excuse the lack of functionality in current form!
+      </p>
+    </section>
+  </body>
+</html>
