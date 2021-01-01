@@ -1,4 +1,4 @@
-/*
+ /*
  * Name: David Schultz
  * Date: 11.20.2020
  * Section: CSE 154 AF / Wilson Tang
@@ -87,6 +87,8 @@ app.post('/chess/move', function(req, res) {
     });
   } else {
     let matchState = boardState['match-state'];
+    console.log(matchState);
+    console.log(getCoordPiece(matchState, coord));
     let isValid = checkValid(matchState, coord, newCoord);
     if (isValid) {
       matchState = makeMove(matchState, coord, newCoord);
@@ -95,6 +97,139 @@ app.post('/chess/move', function(req, res) {
     res.send(matchState);
   }
 });
+
+app.get('/chess/getmoves', async function(req, res) {
+  let position = req.query.position;
+  let matchId = req.query.matchid;
+  let json = {
+    'moves': ['', '', '']
+  };
+  json['moves'] = getMoveSet()
+
+});
+
+/* ============== * - MOVESETS - * ==============
+ *
+ * In general, these scenarios always have to be looked for:
+ *  - Piece is pinned
+ *  - Movement off the board
+ *  - Piece is in the way
+ *  - Function for capturing a piece
+ *
+ *
+ *
+ *
+ *
+ */
+
+/**
+ * Returns an array of all coordinates the given piece can move to in the given matchState.
+ * @param {JSON} matchState - Match data, containing the last move and piece placements
+ * @param {JSON} piece - Piece data regarding it's placement, color, and type
+ * @return {array} String array of all coordinates the piece can move to
+ */
+function getMoveSet(matchState, piece) {
+  let moveSet = [];
+  let file = piece['position'].substring(0, 1);
+  let rank = parseInt(piece['position'].substring(1));
+  if (piece['type'] === 'pawn') {
+    moveSet = pawnMoves(matchState, piece, rank, file);
+
+            // let moveSet = [];
+            // let forwardTwo = file;
+            // let upRank = rank;
+            // if (piece['color'] === 'white') {
+            //   upRank += 1;
+            //   forwardTwo += (upRank + 1);
+            // } else {
+            //   upRank -= 1;
+            //   forwardTwo += (upRank - 1);
+            // }
+            // let forwardOne = file + upRank;
+            // let diagLeft = String.fromCharCode(file.charCodeAt(0) - 1) + upRank;
+            // let diagRight = String.fromCharCode(file.charCodeAt(0) + 1) + upRank;
+            // moveSet.push(forwardOne);
+            // if (rank === 2 || rank === BOARD_SIZE - 1) {
+            //   moveSet.push(forwardTwo);
+            // }
+            // if (file !== 'a') {
+            //   moveSet.push(diagLeft);
+            // }
+            // if (file !== 'h') {
+            //   moveSet.push(diagRight);
+            // }
+
+  } else if (piece['type'] === 'knight') {
+    moveSet = knightMoves(matchState, piece, rank, file);
+  } else if (piece['type'] === 'bishop') {
+    moveSet = bishopMoves(matchState, piece, rank, file);
+  } else if (piece['type'] === 'rook') {
+    moveSet = rookMoves(matchState, piece, rank, file);
+  } else if (piece['type'] === 'queen') {
+    moveSet = queenMoves(matchState, piece, rank, file);
+  } else if (piece['type'] === 'king') {
+    moveSet = kingMoves(matchState, piece, rank, file);
+  }
+  return moveSet;
+}
+
+function pawnMoves(matchState, piece, rank, file) {
+  let moveSet = [];
+  let curCoord = getArrayNotation(piece['position']);
+}
+
+function knightMoves(matchState, piece) {
+
+}
+
+function bishopMoves(matchState, pieces) {
+
+}
+
+function rookMoves(matchState, pieces) {
+
+}
+
+function queenMoves(matchState, pieces) {
+
+}
+
+function kingMoves(matchState, pieces) {
+
+}
+
+function getArrayNotation(position) {
+  let arrayNotation = [];
+  arrayNotation[0] = position.charCodeAt(1);
+}
+
+/**
+ * Returns the opposite of the given color, either 'white' or 'black'.
+ * @param {string} color - Color to return  opposite of
+ * @return {string} Opposite of given color
+ */
+function getOppositeColor(color) {
+  if (color === 'white') {
+    return 'black';
+  }
+  return 'white';
+}
+
+/**
+ * Returns the piece at the given coord in the given matchState.
+ * @param {JSON} matchState - Match data, containing the last move and piece placements
+ * @param {string} coord - Coordinate to find piece at
+ * @return {JSON} Piece data regarding it's placement, color, and type
+ */
+function getCoordPiece(matchState, coord) {
+  let piece;
+  for (let i = 0; i < matchState['pieces'].length; i++) {
+    if (matchState['pieces'][i]['position'] === coord) {
+      piece = matchState['pieces'][i];
+    }
+  }
+  return piece;
+}
 
 /**
  * Returns whether the given move (coord, newcoord) is valid, per the given matchState.
@@ -158,71 +293,6 @@ function validMoveSet(matchState, piece) {
     return getMoveSet(matchState, piece);
   }
   return moveSet;
-}
-
-/**
- * Returns an array of all coordinates the given piece can move to in the given matchState.
- * @param {JSON} matchState - Match data, containing the last move and piece placements
- * @param {JSON} piece - Piece data regarding it's placement, color, and type
- * @return {array} String array of all coordinates the piece can move to
- */
-function getMoveSet(matchState, piece) {
-  let moveSet = [];
-  let file = piece['position'].substring(0, 1);
-  let rank = parseInt(piece['position'].substring(1));
-  if (piece['type'] === 'pawn') {
-    let forwardTwo = file;
-    let upRank = rank;
-    if (piece['color'] === 'white') {
-      upRank += 1;
-      forwardTwo += (upRank + 1);
-    } else {
-      upRank -= 1;
-      forwardTwo += (upRank - 1);
-    }
-    let forwardOne = file + upRank;
-    let diagLeft = String.fromCharCode(file.charCodeAt(0) - 1) + upRank;
-    let diagRight = String.fromCharCode(file.charCodeAt(0) + 1) + upRank;
-    moveSet.push(forwardOne);
-    if (rank === 2 || rank === BOARD_SIZE - 1) {
-      moveSet.push(forwardTwo);
-    }
-    if (file !== 'a') {
-      moveSet.push(diagLeft);
-    }
-    if (file !== 'h') {
-      moveSet.push(diagRight);
-    }
-  }
-  return moveSet;
-}
-
-/**
- * Returns the opposite of the given color, either 'white' or 'black'.
- * @param {string} color - Color to return  opposite of
- * @return {string} Opposite of given color
- */
-function getOppositeColor(color) {
-  if (color === 'white') {
-    return 'black';
-  }
-  return 'white';
-}
-
-/**
- * Returns the piece at the given coord in the given matchState.
- * @param {JSON} matchState - Match data, containing the last move and piece placements
- * @param {string} coord - Coordinate to find piece at
- * @return {JSON} Piece data regarding it's placement, color, and type
- */
-function getCoordPiece(matchState, coord) {
-  let piece;
-  for (let i = 0; i < matchState['pieces'].length; i++) {
-    if (matchState['pieces'][i]['position'] === coord) {
-      piece = matchState['pieces'][i];
-    }
-  }
-  return piece;
 }
 
 /**

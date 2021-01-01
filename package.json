@@ -1,25 +1,25 @@
 {
   "name": "portfolio-site",
   "version": "1.0.0",
-  "description": "",
+  "description": "This is the codebase for a portfolio site of mine.",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/david-schultz/frigid.dev.git"
+    "url": "git+https://github.com/david-schultz/david-schultz.github.io.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/david-schultz/frigid.dev/issues"
+    "url": "https://github.com/david-schultz/david-schultz.github.io/issues"
   },
-  "homepage": "https://github.com/david-schultz/frigid.dev#readme",
+  "homepage": "https://github.com/david-schultz/david-schultz.github.io#readme",
   "dependencies": {
     "express": "^4.17.1",
     "multer": "^1.4.2",
-    "sqlite": "^4.0.18",
+    "sqlite": "^4.0.19",
     "sqlite3": "^5.0.0"
   }
 }

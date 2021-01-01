@@ -71,7 +71,7 @@
       .then(checkStatus)
       .then(res => res.text())
       .then(res => {
-        id('piece-list').textContent = res;
+        // id('piece-list').textContent = res;
       })
       .catch(handleError);
   }
@@ -82,6 +82,7 @@
    * @param {obj} res - Rseponse from chess API
    */
   function initializeMatch(res) {
+    console.log(res);
     let board = createBoard(res['match-id']);
     id('game-view').appendChild(board);
     let pieces = res['match-state']['pieces'];
