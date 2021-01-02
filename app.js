@@ -15,6 +15,7 @@ const express = require('express');
 const multer = require("multer");
 const sqlite3 = require('sqlite3');
 const sqlite = require('sqlite');
+const { write } = require('fs');
 const app = express();
 app.use(express.urlencoded({extended: true}));
 app.use(express.json());
@@ -26,6 +27,7 @@ const CLIENT_ERROR_CODE = 400;
 const MAX_ID = 999999;
 const PORT_NUMBER = 8080;
 let boardState;
+let curMatchId;
 
 /**
  * GET endpoint which sends a JSON response detailing info on a fresh match.
@@ -34,17 +36,72 @@ let boardState;
  * @return {JSON} Match data about initial chess piece placements
  */
 app.get('/chess/getmatch', async function(req, res) {
-  const db = await getDBConnection();
   res.type('json');
-  let matchId = idCreator('match');
-  let matchState = newMatchState();
-  let match = {
-    'match-id': matchId,
-    'match-state': matchState
-  };
-  boardState = match;
-  res.send(match);
+  res.send(await writeNewMatch());
 });
+
+async function writeNewMatch() {
+  const db = await getDBConnection();
+  let sql = 'INSERT INTO matches (next_move) VALUES (?)';
+  let id = (await db.run(sql, ['white'])).lastID;
+  await db.close();
+  initPieces('white', id);
+  initPieces('black', id);
+  let match = {
+    'match-id': id,
+    'pieces': combineArrays(await initPieces('white'), await initPieces('black'))
+  };
+  curMatchId = id;
+  return match;
+}
+
+/**
+ * Returns an array of JSON object pieces of the given color.
+ * @param {string} color - Color of pieces
+ * @return {array} Array of JSON objects representing pieces
+ */
+async function initPieces(color, matchId) {
+  let pieces = [];
+  let backRow;
+  let pawnRow;
+  if (color === 'white') {
+    backRow = 1;
+    pawnRow = 2;
+  } else {
+    backRow = BOARD_SIZE;
+    pawnRow = BOARD_SIZE - 1;
+  }
+  for (let i = 0; i < BOARD_SIZE; i++) {
+    let file = String.fromCharCode(A_CHAR_CODE + i);
+    pieces[i] = await initPiece(color, 'pawn', file + pawnRow, matchId);
+    pieces[i + BOARD_SIZE] = await initPiece(color, getBackRow(i), file + backRow, matchId);
+  }
+  return pieces;
+}
+
+
+/**
+ * Returns a JSON object representing a piece, with the given attributes.
+ * @param {string} color - Color of piece
+ * @param {string} type - Type of piece
+ * @param {string} position - Position of piece
+ * @return {string} Name of piece
+ */
+async function initPiece(color, type, position, matchId) {
+  const db = await getDBConnection();
+  let an = getArrayNotation(position);
+  let sql = 'INSERT INTO pieces (type, color, position, position_rank, position_file, alive, match_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
+  await db.run(sql, [type, color, position, an[0], an[1], 1, matchId]);
+  await db.close();
+  let piece = {
+    "color": color,
+    "type": type,
+    "alive": true,
+    "position": position
+  };
+  return piece;
+
+}
 
 /**
  * POST endpoint which sends a text response detailing the positions of each piece,
@@ -71,41 +128,45 @@ app.post('/chess/pieces', function(req, res) {
  * @param {obj} res - Response sent back to client
  * @return {JSON} Match data containing new chess piece placements, and the last move
  */
-app.post('/chess/move', function(req, res) {
-  res.type('json');
-  let matchId = req.body.matchid;
-  let coord = req.body.coord;
-  let newCoord = req.body.newcoord;
+// app.post('/chess/move', function(req, res) {
+//   let matchId = req.body.matchid;
+//   let coord = req.body.coord;
+//   let newCoord = req.body.newcoord;
 
-  if (matchId === undefined || coord === undefined || newCoord === undefined) {
-    res.status(CLIENT_ERROR_CODE).send({
-      'error': 'Missing required POST parameters: matchid, coord, newcoord'
-    });
-  } else if (matchId > MAX_ID || matchId < 0) {
-    res.status(CLIENT_ERROR_CODE).send({
-      'error': 'Invalid match id'
-    });
-  } else {
-    let matchState = boardState['match-state'];
-    console.log(matchState);
-    console.log(getCoordPiece(matchState, coord));
-    let isValid = checkValid(matchState, coord, newCoord);
-    if (isValid) {
-      matchState = makeMove(matchState, coord, newCoord);
-    }
-    matchState['valid'] = isValid;
-    res.send(matchState);
-  }
-});
+//   if (matchId === undefined || coord === undefined || newCoord === undefined) {
+//     res.status(CLIENT_ERROR_CODE).json({
+//       'error': 'Missing required POST parameters: matchid, coord, newcoord'
+//     });
+//   } else if (matchId > MAX_ID || matchId < 0) {
+//     res.status(CLIENT_ERROR_CODE).json({
+//       'error': 'Invalid match id'
+//     });
+//   } else {
+//     console.log(boardState);
+//     let matchState = boardState['match-state'];
+//     // console.log(getCoordPiece(matchState, coord));
+//     let board = getBoardRepresentation(matchState);
+//     res.json(matchState);
+//   }
+// });
 
 app.get('/chess/getmoves', async function(req, res) {
   let position = req.query.position;
-  let matchId = req.query.matchid;
-  let json = {
-    'moves': ['', '', '']
-  };
-  json['moves'] = getMoveSet()
+  let matchId = req.query.match_id;
 
+  const db = await getDBConnection();
+  let sql = 'SELECT type, color, position_rank, position_file, alive FROM pieces WHERE match_id = ?';
+  let allPieces = await db.all(sql, matchId);
+  sql = 'SELECT type, color, position, position_rank, position_file FROM pieces WHERE match_id = ? AND position = ?'
+  let selectedPiece = await db.all(sql, [matchId, position]);
+  await db.close();
+
+  if (selectedPiece.length === 0) {
+    res.status(CLIENT_ERROR_CODE).json({'error': 'No piece selected'});
+  } else {
+    let moveSet = await getMoveSet(allPieces, selectedPiece);
+    res.json(moveSet);
+  }
 });
 
 /* ============== * - MOVESETS - * ==============
@@ -116,10 +177,6 @@ app.get('/chess/getmoves', async function(req, res) {
  *  - Piece is in the way
  *  - Function for capturing a piece
  *
- *
- *
- *
- *
  */
 
 /**
@@ -128,54 +185,76 @@ app.get('/chess/getmoves', async function(req, res) {
  * @param {JSON} piece - Piece data regarding it's placement, color, and type
  * @return {array} String array of all coordinates the piece can move to
  */
-function getMoveSet(matchState, piece) {
+async function getMoveSet(allPieces, piece) {
+  let board = convertToBoard(allPieces);
   let moveSet = [];
-  let file = piece['position'].substring(0, 1);
-  let rank = parseInt(piece['position'].substring(1));
-  if (piece['type'] === 'pawn') {
-    moveSet = pawnMoves(matchState, piece, rank, file);
-
-            // let moveSet = [];
-            // let forwardTwo = file;
-            // let upRank = rank;
-            // if (piece['color'] === 'white') {
-            //   upRank += 1;
-            //   forwardTwo += (upRank + 1);
-            // } else {
-            //   upRank -= 1;
-            //   forwardTwo += (upRank - 1);
-            // }
-            // let forwardOne = file + upRank;
-            // let diagLeft = String.fromCharCode(file.charCodeAt(0) - 1) + upRank;
-            // let diagRight = String.fromCharCode(file.charCodeAt(0) + 1) + upRank;
-            // moveSet.push(forwardOne);
-            // if (rank === 2 || rank === BOARD_SIZE - 1) {
-            //   moveSet.push(forwardTwo);
-            // }
-            // if (file !== 'a') {
-            //   moveSet.push(diagLeft);
-            // }
-            // if (file !== 'h') {
-            //   moveSet.push(diagRight);
-            // }
-
-  } else if (piece['type'] === 'knight') {
-    moveSet = knightMoves(matchState, piece, rank, file);
-  } else if (piece['type'] === 'bishop') {
-    moveSet = bishopMoves(matchState, piece, rank, file);
-  } else if (piece['type'] === 'rook') {
-    moveSet = rookMoves(matchState, piece, rank, file);
-  } else if (piece['type'] === 'queen') {
-    moveSet = queenMoves(matchState, piece, rank, file);
-  } else if (piece['type'] === 'king') {
-    moveSet = kingMoves(matchState, piece, rank, file);
+  // let file = piece['position'].substring(0, 1);
+  // let rank = parseInt(piece['position'].substring(1));
+  if (piece[0]['type'] === 'pawn') {
+    moveSet = await pawnMoves(board, piece[0]);
+  } else if (piece[0]['type'] === 'knight') {
+    moveSet = knightMoves(matchState, piece[0]);
+  } else if (piece[0]['type'] === 'bishop') {
+    moveSet = bishopMoves(matchState, piece[0]);
+  } else if (piece[0]['type'] === 'rook') {
+    moveSet = rookMoves(matchState, piece[0]);
+  } else if (piece[0]['type'] === 'queen') {
+    moveSet = queenMoves(matchState, piece[0]);
+  } else if (piece[0]['type'] === 'king') {
+    moveSet = kingMoves(matchState, piece[0]);
   }
   return moveSet;
 }
 
-function pawnMoves(matchState, piece, rank, file) {
+async function pawnMoves(board, piece) {
   let moveSet = [];
-  let curCoord = getArrayNotation(piece['position']);
+  let curPosition = [piece['position_rank'], piece['position_file']];
+  let orientation = (piece['color'] === 'white');
+  if (orientation) {
+    if (curPosition[0] === 6) {
+      moveSet.push([curPosition[0] - 2, curPosition[1]]);
+    }
+    moveSet.push([curPosition[0] - 1, curPosition[1]]);
+    moveSet.push([curPosition[0] - 1, curPosition[1] - 1]);
+    moveSet.push([curPosition[0] - 1, curPosition[1] + 1]);
+  } else {
+    if (curPosition[0] === 1) {
+      moveSet.push([curPosition[0] + 2, curPosition[1]]);
+    }
+    moveSet.push([curPosition[0] + 1, curPosition[1]]);
+    moveSet.push([curPosition[0] + 1, curPosition[1] - 1]);
+    moveSet.push([curPosition[0] + 1, curPosition[1] + 1]);
+  }
+  moveSet = await validatePawnMoves(board, moveSet);
+  return moveSet;
+}
+
+async function validatePawnMoves(board, moveSet) {
+  console.log(moveSet);
+  let validMoves = [];
+  for (let i = 0; i < moveSet.length; i++) {
+    let validRank = (moveSet[i][0] >= 0 && moveSet[i][0] < 8);
+    let validFile = (moveSet[i][1] >= 0 && moveSet[i][1] < 8);
+    if (validRank && validFile) {
+      validMoves.push(moveSet[i]);
+    }
+  }
+  //TODO: diagonal capture
+  for (let i = 0; i < validMoves.length; i++) {
+    let check = await checkPosition(curMatchId, getAlgebraicNotation(validMoves[i]));
+    console.log(check);
+  }
+  //TODO: doesn't leave king in check
+  //TODO: not blocked by own piece
+  //TODO: forward piece not blocked
+}
+
+async function checkPosition(matchId, position) {
+  const db = await getDBConnection();
+  let sql = 'SELECT color, alive FROM pieces WHERE match_id = ? AND position = ?';
+  let piece = await db.all(sql, [matchId, position]);
+  await db.close();
+  return piece;
 }
 
 function knightMoves(matchState, piece) {
@@ -198,9 +277,18 @@ function kingMoves(matchState, pieces) {
 
 }
 
-function getArrayNotation(position) {
-  let arrayNotation = [];
-  arrayNotation[0] = position.charCodeAt(1);
+function convertToBoard(allPieces) {
+  let board = [];
+  for (let i = 0; i < 8; i++) {
+    board[i] = [];
+  }
+  for (let i = 0; i < allPieces.length; i++) {
+    let piece = allPieces[i];
+    if (piece['alive'] === 1) {
+      board[piece['position_rank']][piece['position_file']] = piece;
+    }
+  }
+  return board;
 }
 
 /**
@@ -229,23 +317,6 @@ function getCoordPiece(matchState, coord) {
     }
   }
   return piece;
-}
-
-/**
- * Returns whether the given move (coord, newcoord) is valid, per the given matchState.
- * @param {JSON} matchState - Match data, containing the last move and piece placements
- * @param {string} coord - Coordinate of piece to move
- * @param {string} newcoord - Coordinate piece wants to move to
- * @return {boolean} Whether the given move is valid or not
- */
-function checkValid(matchState, coord, newcoord) {
-  let color = getOppositeColor(matchState['last-move']['color']);
-  let piece = getCoordPiece(matchState, coord);
-  if (piece['color'] !== color || piece['type'] !== 'pawn' || piece['status'] === 'dead') {
-    return false;
-  }
-  let validMoves = validMoveSet(matchState, piece);
-  return validMoves.includes(newcoord);
 }
 
 /**
@@ -295,6 +366,21 @@ function validMoveSet(matchState, piece) {
   return moveSet;
 }
 
+function getArrayNotation(position) {
+  let arrayNotation = [];
+  arrayNotation[0] = 8 - parseInt(position.substring(1));
+  arrayNotation[1] = position.charCodeAt(0) - 97;
+  return arrayNotation;
+}
+
+function getAlgebraicNotation(position) {
+  let algebraic = String.fromCharCode(position[1] + 97);
+  algebraic += '' + (8 - position[0]);
+  return algebraic;
+}
+
+
+
 /**
  * Returns a fresh matchstate containing an empty last move, and initial piece placements.
  * @return {JSON} Piece data regarding it's placement, color, and type
@@ -331,30 +417,6 @@ function combineArrays(array1, array2) {
 }
 
 /**
- * Returns an array of JSON object pieces of the given color.
- * @param {string} color - Color of pieces
- * @return {array} Array of JSON objects representing pieces
- */
-function initPieces(color) {
-  let pieces = [];
-  let backRow;
-  let pawnRow;
-  if (color === 'white') {
-    backRow = 1;
-    pawnRow = 2;
-  } else {
-    backRow = BOARD_SIZE;
-    pawnRow = BOARD_SIZE - 1;
-  }
-  for (let i = 0; i < BOARD_SIZE; i++) {
-    let file = String.fromCharCode(A_CHAR_CODE + i);
-    pieces[i] = initPiece(color, 'pawn', file + pawnRow);
-    pieces[i + BOARD_SIZE] = initPiece(color, getBackRow(i), file + backRow);
-  }
-  return pieces;
-}
-
-/**
  * Returns the name of a piece, given the initial file the piece is in.
  * @param {string} index - Represents the initial file the piece is at
  * @return {string} Name of piece
@@ -373,23 +435,6 @@ function getBackRow(index) {
 }
 
 /**
- * Returns a JSON object representing a piece, with the given attributes.
- * @param {string} color - Color of piece
- * @param {string} type - Type of piece
- * @param {string} position - Position of piece
- * @return {string} Name of piece
- */
-function initPiece(color, type, position) {
-  let piece = {
-    "color": color,
-    "type": type,
-    "status": "alive",
-    "position": position
-  };
-  return piece;
-}
-
-/**
  * Returns a string containing the list of all pieces on the board that are alive.
  * @param {JSON} matchState - Match data, containing the last move and piece placements
  * @return {string} String list of all alive pieces on board.
@@ -398,7 +443,7 @@ function pieceList(matchState) {
   let list = '';
   for (let i = 0; i < matchState['pieces'].length; i++) {
     let piece = matchState['pieces'][i];
-    if (piece['status'] !== 'dead') {
+    if (piece['status']) {
       list += piece['color'] + ' ' + piece['type'] + ' at ' + piece['position'];
       list += ', ';
     }

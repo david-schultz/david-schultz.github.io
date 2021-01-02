@@ -23,7 +23,7 @@
   }
 
   /**
-   * Sends a GET  request to the chess API at the /chess/getmatch endpoint, in
+   * Sends a GET request to the chess API at the /chess/getmatch endpoint, in
    * order to obtain piece positions on a new match.
    */
   function reqNewMatch() {
@@ -56,6 +56,19 @@
       .catch(handleError);
   }
 
+  function reqMoveSet(position) {
+    console.log(position);
+    fetch('/chess/getmoves?position=' + position + '&match_id=' + localStorage.getItem('match_id'))
+      .then(checkStatus)
+      .then(res => res.json())
+      .then(processMoveSet)
+      .catch(handleError);
+  }
+
+  function processMoveSet(res) {
+    console.log(res);
+  }
+
   /**
    * Sends a POST request to the chess API at the /chess/pieces endpoint.
    * Updates the DOM's piece-list with API's response.
@@ -85,7 +98,9 @@
     console.log(res);
     let board = createBoard(res['match-id']);
     id('game-view').appendChild(board);
-    let pieces = res['match-state']['pieces'];
+    window.localStorage.setItem('match_id', res['match-id']);
+    console.log(window.localStorage.getItem('match_id'));
+    let pieces = res['pieces'];
     addAllPieces(pieces);
   }
 
@@ -148,6 +163,7 @@
       clearAllSelected();
     }
     if (this.children[0].children[0]) {
+      reqMoveSet(this.id);
       clearAllSelected();
       this.children[0].classList.add('selected');
       id('current-selection').textContent = this.id;
