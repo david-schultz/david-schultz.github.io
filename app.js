@@ -45,15 +45,14 @@ async function writeNewMatch() {
   let sql = 'INSERT INTO matches (next_move) VALUES (?)';
   let id = (await db.run(sql, ['white'])).lastID;
   await db.close();
-  initPieces('white', id);
-  initPieces('black', id);
   let match = {
     'match-id': id,
-    'pieces': combineArrays(await initPieces('white'), await initPieces('black'))
+    'pieces': combineArrays(await initPieces('white', id), await initPieces('black', id))
   };
   curMatchId = id;
   return match;
 }
+
 
 /**
  * Returns an array of JSON object pieces of the given color.
@@ -164,7 +163,10 @@ app.get('/chess/getmoves', async function(req, res) {
   if (selectedPiece.length === 0) {
     res.status(CLIENT_ERROR_CODE).json({'error': 'No piece selected'});
   } else {
-    let moveSet = await getMoveSet(allPieces, selectedPiece);
+    let moveSet = await getMoveSet(allPieces, selectedPiece, matchId);
+    for (let i = 0; i < moveSet.length; i++) {
+      moveSet[i] = getAlgebraicNotation(moveSet[i]);
+    }
     res.json(moveSet);
   }
 });
@@ -185,28 +187,29 @@ app.get('/chess/getmoves', async function(req, res) {
  * @param {JSON} piece - Piece data regarding it's placement, color, and type
  * @return {array} String array of all coordinates the piece can move to
  */
-async function getMoveSet(allPieces, piece) {
+async function getMoveSet(allPieces, piece, matchId) {
   let board = convertToBoard(allPieces);
   let moveSet = [];
   // let file = piece['position'].substring(0, 1);
   // let rank = parseInt(piece['position'].substring(1));
   if (piece[0]['type'] === 'pawn') {
-    moveSet = await pawnMoves(board, piece[0]);
+    moveSet = await pawnMoves(board, piece[0], matchId);
   } else if (piece[0]['type'] === 'knight') {
-    moveSet = knightMoves(matchState, piece[0]);
+    moveSet = knightMoves(matchState, piece[0], matchId);
   } else if (piece[0]['type'] === 'bishop') {
-    moveSet = bishopMoves(matchState, piece[0]);
+    moveSet = bishopMoves(matchState, piece[0], matchId);
   } else if (piece[0]['type'] === 'rook') {
-    moveSet = rookMoves(matchState, piece[0]);
+    moveSet = rookMoves(matchState, piece[0], matchId);
   } else if (piece[0]['type'] === 'queen') {
-    moveSet = queenMoves(matchState, piece[0]);
+    moveSet = queenMoves(matchState, piece[0], matchId);
   } else if (piece[0]['type'] === 'king') {
-    moveSet = kingMoves(matchState, piece[0]);
+    moveSet = kingMoves(matchState, piece[0], matchId);
   }
+
   return moveSet;
 }
 
-async function pawnMoves(board, piece) {
+async function pawnMoves(board, piece, matchId) {
   let moveSet = [];
   let curPosition = [piece['position_rank'], piece['position_file']];
   let orientation = (piece['color'] === 'white');
@@ -225,12 +228,15 @@ async function pawnMoves(board, piece) {
     moveSet.push([curPosition[0] + 1, curPosition[1] - 1]);
     moveSet.push([curPosition[0] + 1, curPosition[1] + 1]);
   }
-  moveSet = await validatePawnMoves(board, moveSet);
+  moveSet = await validatePawnMoves(board, moveSet, matchId, piece['color'], curPosition);
   return moveSet;
 }
 
-async function validatePawnMoves(board, moveSet) {
-  console.log(moveSet);
+async function validatePawnMoves(board, moveSet, matchId, color, position) {
+  console.log('moveset:');
+  for (let i = 0; i < moveSet.length; i++) {
+    console.log(getAlgebraicNotation(moveSet[i]));
+  }
   let validMoves = [];
   for (let i = 0; i < moveSet.length; i++) {
     let validRank = (moveSet[i][0] >= 0 && moveSet[i][0] < 8);
@@ -239,14 +245,33 @@ async function validatePawnMoves(board, moveSet) {
       validMoves.push(moveSet[i]);
     }
   }
-  //TODO: diagonal capture
+  console.log(validMoves);
   for (let i = 0; i < validMoves.length; i++) {
-    let check = await checkPosition(curMatchId, getAlgebraicNotation(validMoves[i]));
+    //TODO: not blocked by own piece
+    let check = await checkPosition(matchId, getAlgebraicNotation(validMoves[i]));
     console.log(check);
+
+    if (validMoves[i][1] != position[1]) { // if move is diagonal from position
+      if (check.length === 0) { // if there is no piece on square
+        validMoves.splice(i, 1);
+        i--;
+      } else if (check['color'] === color) { // if own piece is on square
+        validMoves.splice(i, 1);
+        i--;
+      }
+    } else {  // if move is straight ahead
+      if (check.length !== 0) { // if there is a piece on square
+        validMoves.splice(i, 1);
+        i--;
+      }
+    }
+
   }
+  //TODO: diagonal capture
   //TODO: doesn't leave king in check
-  //TODO: not blocked by own piece
   //TODO: forward piece not blocked
+  console.log('valid moves:', validMoves);
+  return validMoves;
 }
 
 async function checkPosition(matchId, position) {
