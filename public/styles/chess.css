@@ -6,7 +6,7 @@
  * This stylesheet styles the chessboard for the chess page.
  */
 
-.tile, .piece {
+.tile, .piece, .potential-move {
   width: 40px;
   height: 40px;
 }
@@ -25,6 +25,14 @@
 
 .light-tile.selected {
   background-color: rgb(160, 225, 155);
+}
+
+.potential-move {
+
+}
+
+.potential-take {
+
 }
 
 table {

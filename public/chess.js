@@ -42,6 +42,7 @@
    * @param {string} newCoord - Coordinate of selected piece's destination
    */
   function reqMove(matchId, curCoord, newCoord) {
+    console.log('requesting move from ' + curCoord + ' to ' + newCoord);
     let parameters = new FormData();
     parameters.append('matchid', matchId);
     parameters.append('coord', curCoord);
@@ -57,7 +58,7 @@
   }
 
   function reqMoveSet(position) {
-    console.log(position);
+    removePotentialMoveDisplay();
     fetch('/chess/getmoves?position=' + position + '&match_id=' + localStorage.getItem('match_id'))
       .then(checkStatus)
       .then(res => res.json())
@@ -66,7 +67,28 @@
   }
 
   function processMoveSet(res) {
-    console.log(res);
+    for (let i = 0; i < res.length; i++) {
+      let tile = id(res[i]).children[0];
+      let img = gen('img');
+      img.src = 'photos/chess/potential-';
+      img.alt = 'potential move';
+      img.className = 'potential-move';
+      if (tile.children.length === 0) {
+        img.src += 'move.png';
+      } else {
+        img.src += 'take.png';
+      }
+      tile.appendChild(img);
+
+
+    }
+  }
+
+  function removePotentialMoveDisplay() {
+    let imgs = qsa('.potential-move');
+    for (let i = 0; i < imgs.length; i++) {
+      imgs[i].parentNode.removeChild(imgs[i]);
+    }
   }
 
   /**
@@ -158,20 +180,83 @@
    * chess board to represent it.
    */
   function squareClicked() {
-    let matchId = this.parentNode.parentNode.id;
     if (this.children[0].classList.contains('selected')) {
       clearAllSelected();
     }
-    if (this.children[0].children[0]) {
-      reqMoveSet(this.id);
-      clearAllSelected();
-      this.children[0].classList.add('selected');
-      id('current-selection').textContent = this.id;
-    } else if (id('current-selection').textContent !== '') {
-      reqMove(matchId, id('current-selection').textContent, this.id);
-      id('current-selection').textContent = '';
-      this.children[0].classList.add('selected');
+    let tile = this.children[0];
+    let containsPiece = false;
+    let containsMove = false;
+    for (let i = 0; i < tile.children.length; i++) {
+      if (tile.children[i].className === 'piece') {
+        containsPiece = true;
+      } else if (tile.children[i].className === 'potential-move') {
+        containsMove = true;
+      }
     }
+    // scenarios
+    // 1. a piece is currently selected
+    //  - selected square has a potential-move on it
+    //  -
+    // 2. a piece is not currently selected
+    //  - selected square has piece on it
+    //
+    //
+
+    if (id('current-selection').textContent === '') {
+      if (containsPiece) {
+        clearAllSelected();
+        reqMoveSet(this.id);
+        this.children[0].classList.add('selected');
+        id('current-selection').textContent = this.id;
+      }
+    } else {
+      if (containsMove) {
+        let matchId = localStorage.getItem('match_id');
+        reqMove(matchId, id('current-selection').textContent, this.id);
+      } else if (containsPiece) {
+        clearAllSelected();
+        reqMoveSet(this.id);
+        this.children[0].classList.add('selected');
+        id('current-selection').textContent = this.id;
+      }
+      id('current-selection').textContent = '';
+    }
+    //
+    // if (this.children[0].children[0]) {
+    //   let div = this.children[0];
+    //   let flag = false;
+    //   for (let i = 0; i < div.children.length; i++) {
+    //     if (div.children[i].className === 'potential-move') {
+    //       flag = true;
+    //     }
+    //   }
+    //   if (flag) { // if the clicked square has a potential move on it
+    //     reqMove(document.localStorage.getItem('match_id'), id('current-selection').textContent, this.id);
+    //   } else { // if the clicked square has nothing on it
+    //     reqMoveSet(this.id);
+    //
+    //   }
+    //   clearAllSelected();
+    //   this.children[0].classList.add('selected');
+    //   id('current-selection').textContent = this.id;
+    // } else if (id('current-selection').textContent !== '') {
+    //   let div = this.children[0];
+    //   let flag = false;
+    //   for (let i = 0; i < div.children.length; i++) {
+    //     if (div.children[i].className === 'potential-move') {
+    //       flag = true;
+    //     }
+    //   }
+    //
+    //     console.log(this.id);
+    //   if (flag) {
+    //
+    //   }
+    //   id('current-selection').textContent = '';
+    //   // this.children[0].classList.add('selected');
+    // }
+    //
+
   }
 
   /**

@@ -42,8 +42,8 @@ app.get('/chess/getmatch', async function(req, res) {
 
 async function writeNewMatch() {
   const db = await getDBConnection();
-  let sql = 'INSERT INTO matches (next_move) VALUES (?)';
-  let id = (await db.run(sql, ['white'])).lastID;
+  let sql = 'INSERT INTO matches (next_move, in_check) VALUES (?, ?)';
+  let id = (await db.run(sql, ['white', 'none'])).lastID;
   await db.close();
   let match = {
     'match-id': id,
@@ -127,27 +127,55 @@ app.post('/chess/pieces', function(req, res) {
  * @param {obj} res - Response sent back to client
  * @return {JSON} Match data containing new chess piece placements, and the last move
  */
-// app.post('/chess/move', function(req, res) {
-//   let matchId = req.body.matchid;
-//   let coord = req.body.coord;
-//   let newCoord = req.body.newcoord;
+app.post('/chess/move', async function(req, res) {
+  let matchId = req.body.matchid;
+  let coord = req.body.coord;
+  let newCoord = req.body.newcoord;
 
-//   if (matchId === undefined || coord === undefined || newCoord === undefined) {
-//     res.status(CLIENT_ERROR_CODE).json({
-//       'error': 'Missing required POST parameters: matchid, coord, newcoord'
-//     });
-//   } else if (matchId > MAX_ID || matchId < 0) {
-//     res.status(CLIENT_ERROR_CODE).json({
-//       'error': 'Invalid match id'
-//     });
-//   } else {
-//     console.log(boardState);
-//     let matchState = boardState['match-state'];
-//     // console.log(getCoordPiece(matchState, coord));
-//     let board = getBoardRepresentation(matchState);
-//     res.json(matchState);
-//   }
-// });
+  const db = await getDBConnection();
+  let sql = 'SELECT next_move FROM matches WHERE id = ?';
+  let nextMove = (await db.all(sql, matchId))[0]['next_move'];
+  sql = 'SELECT id, type, color, position, alive FROM pieces WHERE match_id = ? AND position = ?';
+  let curPosition = (await db.all(sql, [matchId, coord]))[0];
+  let newPosition = (await db.all(sql, [matchId, newCoord]))[0];
+
+  console.log(nextMove);
+  console.log(curPosition, newPosition);
+
+  if (matchId === undefined || coord === undefined || newCoord === undefined) {
+    res.status(CLIENT_ERROR_CODE).json({
+      'error': 'Missing required POST parameters: matchid, coord, newcoord'
+    });
+  } else if (nextMove.length === 0) {  //TODO: validate syntax (if next move is empty, user has wrong matchid)
+    res.status(CLIENT_ERROR_CODE).json({
+      'error': 'Invalid match id'
+    });
+  } else if (nextMove !== curPosition['color']) {
+    res.status(CLIENT_ERROR_CODE).json({
+      'error': 'It is the other players turn'
+    });
+  } else {
+    sql = 'UPDATE matches SET next_move = ? WHERE id = ?';
+    await db.run(sql, [getOppositeColor(nextMove), matchId]);
+    if (newPosition.length === 0 || newPosition['alive'] === 0) { // if new square is empty, just move piece
+
+    } else { // else if new square is filled, 1. confirm enemy piece, 2. capture piece
+      sql = 'UPDATE pieces SET alive = 0, position = null WHERE id = ?';
+      await db.run(sql, [newPosition['id']]);
+    }
+    sql = 'UPDATE pieces SET position = ? WHERE id = ?';
+    await db.run(sql, [newCoord, curPosition['id']]);
+
+    // console.log(getCoordPiece(matchState, coord));
+    sql = 'SELECT id, type, color, position, alive, FROM pieces WHERE match_id = ?';
+    let match = {
+      'match-id': matchId,
+      'pieces': await db.all(sql, [matchId])
+    };
+    res.json(match);
+  }
+  await db.close();
+});
 
 app.get('/chess/getmoves', async function(req, res) {
   let position = req.query.position;
@@ -232,11 +260,8 @@ async function pawnMoves(board, piece, matchId) {
   return moveSet;
 }
 
+//TODO: doesn't leave king in check
 async function validatePawnMoves(board, moveSet, matchId, color, position) {
-  console.log('moveset:');
-  for (let i = 0; i < moveSet.length; i++) {
-    console.log(getAlgebraicNotation(moveSet[i]));
-  }
   let validMoves = [];
   for (let i = 0; i < moveSet.length; i++) {
     let validRank = (moveSet[i][0] >= 0 && moveSet[i][0] < 8);
@@ -245,11 +270,8 @@ async function validatePawnMoves(board, moveSet, matchId, color, position) {
       validMoves.push(moveSet[i]);
     }
   }
-  console.log(validMoves);
   for (let i = 0; i < validMoves.length; i++) {
-    //TODO: not blocked by own piece
     let check = await checkPosition(matchId, getAlgebraicNotation(validMoves[i]));
-    console.log(check);
 
     if (validMoves[i][1] != position[1]) { // if move is diagonal from position
       if (check.length === 0) { // if there is no piece on square
@@ -265,12 +287,7 @@ async function validatePawnMoves(board, moveSet, matchId, color, position) {
         i--;
       }
     }
-
   }
-  //TODO: diagonal capture
-  //TODO: doesn't leave king in check
-  //TODO: forward piece not blocked
-  console.log('valid moves:', validMoves);
   return validMoves;
 }
 
