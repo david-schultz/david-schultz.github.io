@@ -1,0 +1,46 @@
+CREATE TABLE "pieces" (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	type TEXT,
+	color TEXT,
+	position INTEGER,
+	match_id INTEGER,
+	FOREIGN KEY (match_id) REFERENCES matches(id)
+);
+
+CREATE TABLE "boards" (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	turn_number INTEGER,
+	history_id INTEGER,
+	active_id INTEGER,
+	captured_id INTEGER,
+	FOREIGN KEY (history_id) REFERENCES history(id),
+	FOREIGN KEY (active_id) REFERENCES active(id),
+	FOREIGN KEY (captured_id) REFERENCES captured(id)
+);
+
+CREATE TABLE "history" (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	turn_number INTEGER,
+	white_move TEXT,
+	black_move TEXT,
+	board_id INTEGER,
+	FOREIGN KEY (board_id) REFERENCES boards(id)
+);
+
+CREATE TABLE "active" (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	piece_id INTEGER,
+	board_id INTEGER,
+	FOREIGN KEY (piece_id) REFERENCES pieces(id),
+	FOREIGN KEY (board_id) REFERENCES boards(id)
+);
+
+CREATE TABLE "captured" (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	piece_id INTEGER,
+	board_id INTEGER,
+	FOREIGN KEY (piece_id) REFERENCES pieces(id),
+	FOREIGN KEY (board_id) REFERENCES boards(id)
+);
+
+INSERT INTO boards (id) VALUES (99);
