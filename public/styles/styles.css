@@ -18,7 +18,9 @@ body, a {
 h1, .h1 {
   font-size: 64px;
   font-weight: 900;
-  line-height: 100%; /* i believe default h1 line-height is larger than 100% */
+  line-height: 80%; /* i believe default h1 line-height is larger than 100% */
+  text-align: center;
+  letter-spacing: -0.03em;
 }
 
 h2, .h2 {

@@ -1,5 +1,5 @@
 
-/* Tooltip text */
+/* Tooltips */
 .tooltip {
   display: flex;
   flex-direction: column;
@@ -8,37 +8,101 @@
   border-radius: 3px;
 }
 
-.beak {
-  /* drop shadow/main */
-  filter: drop-shadow(0px 2px 5px rgba(0, 0, 0, 0.25));
-  width: 27.5px;
-  margin-top: -1px;
-}
-
 .tooltip-box {
-  /* Auto Layout */
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 12px 32px;
+  padding: 12px 20px;
   background: #3E4A51;
-
-  /* drop shadow/main */
   box-shadow: 0px 4px 5px rgba(0, 0, 0, 0.25);
   border-radius: 6px;
 }
 
 .tooltip-highlight {
-  /* Inside Auto Layout */
-  flex: none;
-  margin: 0px 0px;
   height: 10px;
   border: 2px solid #FDC149;
   background-color: #FDC149;
 }
 
 .tooltip-text {
-  flex: none;
   margin: 0px 10px;
   color: #FBFAF9;
+}
+
+.beak {
+  filter: drop-shadow(0px 2px 5px rgba(0, 0, 0, 0.25));
+  width: 27.5px;
+  margin-top: -1px;
+}
+
+
+
+/* Selecttips */
+.selecttip {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+#left-select .tooltip-box {
+  border-radius: 6px 0 0 6px;
+}
+
+#right-select .tooltip-box {
+  border-radius: 0 6px 6px 0;
+}
+
+.beak {
+  display: none;
+}
+
+.selected .tooltip-box {
+  background: #FDC149;
+}
+
+.selecttip .selected .beak {
+  display: block;
+}
+
+
+
+
+
+
+
+/* Notepads */
+.notepad {
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 20px 40px;
+  background: #FBFAF9;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  border-radius: 5px;
+}
+
+.notepad-title {
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+  margin: 0;
+}
+
+.notepad-divider {
+  flex: none;
+  order: 1;
+  flex-grow: 0;
+  width: 95%;
+  margin: 5px 0 0 0;
+  border: 2px solid #FDC149;
+  background-color: #FDC149;
+}
+
+.notepad-content {
+  flex: none;
+  order: 2;
+  flex-grow: 0;
+  margin: 12px 0 0 0;
+  padding: 0;
 }
