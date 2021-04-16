@@ -1,18 +1,10 @@
-/*
-  Name: David Schultz
-  Date: 10.21.2020
-  Section: CSE 154 AF / Wilson Tang
-
-  This is the global style sheet for my portfolio website. It contains some
-  general styling for text and links, in order to give the site a consistent feel.
-*/
-
 body, a {
   font-family: "source-sans-pro", sans-serif;
   font-size: 16px;
   font-weight: 400;
   font-style: normal;
   text-decoration: none;
+  color: #F4F3EE;
 }
 
 h1, .h1 {
@@ -25,12 +17,12 @@ h1, .h1 {
 
 h2, .h2 {
   font-size: 40px;
-  font-weight: 700;
+  font-weight: bold;
 }
 
 h3, .h3 {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: bold;
 }
 
 .subtitle {
@@ -40,7 +32,8 @@ h3, .h3 {
 
 .pretitle {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
 strong {
@@ -51,6 +44,7 @@ strong {
 em {
   font-size: 16px;
   font-style: italic;
+  font-weight: 600;
 }
 
 small {
@@ -59,7 +53,8 @@ small {
 
 .subtext {
   font-size: 12pt;
-  font-weight: 700px;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
 .color-goldenrod {

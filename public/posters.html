@@ -5,14 +5,15 @@
     <link rel="stylesheet" href="styles/styles.css">
     <link rel="stylesheet" href="styles/format.css">
     <link rel="stylesheet" href="styles/instances.css">
+    <link rel="stylesheet" href="styles/posters.css">
     <link rel="stylesheet" href="https://use.typekit.net/dzh7mpf.css">
     <title>filmgrain</title>
     <script src="posters.js"></script>
   </head>
   <body id="photo-bg" class="color-dark-bg flex-container">
-    <p class="flex-item pretitle color-isabella">POSTERS</p>
+    <p class="flex-item pretitle">POSTERS</p>
     <header class="flex-container margin-top-84">
-      <h1 class="flex-item color-isabella" style="width: 200px;">Get a custom poster</h1>
+      <h1 class="flex-item" style="width: 200px;">Get a custom poster</h1>
     </header>
 
     <div id="select-tip" class="selecttip flex-item margin-top-32">
@@ -34,8 +35,29 @@
       </div>
     </div>
 
-    <div class="content-section">
+    <div id="content" class="flex-container">
+      <p class="flex-item">
+        Let me know what album or song you want.
+        I’ll make the design, custom for you,
+        before you need to purchase it.
+      </p>
+      <form class="flex-container flex-item">
+        <label for="email" class="subtext">EMAIL:</label>
+        <input type="text" id="email" name="email" placeholder="boundless@dub.net">
 
+        <label for="album" class="subtext">ALBUM:</label>
+        <input type="text" id="album" name="album" placeholder="transit - flofilz">
+
+        <label for="size" class="subtext">SIZE:</label>
+        <select id="size" name="size">
+          <option value="11x17">11in x 17in</option>
+          <option value="16x20">16in x 20in</option>
+          <option value="24x36">24in x 36in</option>
+        </select>
+
+        <label for="note" class="subtext">ADD A NOTE:</label>
+        <input type="text" id="note" name="note" placeholder="Write your message here...">
+      </form>
     </div>
   </body>
 </html>
